@@ -3,7 +3,6 @@ using GeneGenie.Geocoder.Models;
 using GeneGenie.Geocoder.Models.Geo;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Geomapping
@@ -28,10 +27,16 @@ namespace Geomapping
             return response.Locations;
         }
 
+        public bool IsLocationIncludes(LocationPair location, LocationPair innerLocation, double radius)
+        {
+            var distance = GetDistance(location, innerLocation);
+            return distance < radius;
+        }
+
         public double GetRadius(GeocodeResponseLocation location)
         {
-            var distanceToNorthEast = GetDistanceFromLatLonInKm(location.Location.Latitude, location.Location.Longitude, location.Bounds.NorthEast.Latitude, location.Bounds.NorthEast.Longitude);
-            var distanceToSouthWest = GetDistanceFromLatLonInKm(location.Location.Latitude, location.Location.Longitude, location.Bounds.SouthWest.Latitude, location.Bounds.SouthWest.Longitude);
+            var distanceToNorthEast = GetDistance(location.Location, location.Bounds.NorthEast);
+            var distanceToSouthWest = GetDistance(location.Location, location.Bounds.SouthWest);
 
             return Math.Max(distanceToNorthEast, distanceToSouthWest);
         }
