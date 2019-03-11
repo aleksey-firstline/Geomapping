@@ -1,6 +1,7 @@
 ﻿using GeneGenie.Geocoder;
 using GeneGenie.Geocoder.Models;
 using GeneGenie.Geocoder.Models.Geo;
+using GeneGenie.Geocoder.Services;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -11,11 +12,11 @@ namespace Geomapping
     {
         private GeocodeManager geocodeManager;
 
-        public GeocodeService(string key)
+        public GeocodeService(string key, GeocoderNames geocoder)
         {
             var geocoderSettings = new List<GeocoderSettings>
             {
-                new GeocoderSettings { ApiKey = key, GeocoderName = GeneGenie.Geocoder.Services.GeocoderNames.Google },
+                new GeocoderSettings { ApiKey = key, GeocoderName = geocoder },
             };
 
             geocodeManager = GeocodeManager.Create(geocoderSettings);
@@ -27,16 +28,18 @@ namespace Geomapping
             return response.Locations;
         }
 
-        public bool IsLocationIncludes(LocationPair location, LocationPair innerLocation, double radius)
+        public bool IsLocationIncludes(Bounds bounds, LocationPair innerLocation, double radius)
         {
-            var distance = GetDistance(location, innerLocation);
+            var middle = GetMiddle(bounds);
+            var distance = GetDistance(middle, innerLocation);
             return distance < radius;
         }
 
         public double GetRadius(GeocodeResponseLocation location)
         {
-            var distanceToNorthEast = GetDistance(location.Location, location.Bounds.NorthEast);
-            var distanceToSouthWest = GetDistance(location.Location, location.Bounds.SouthWest);
+            var middle = GetMiddle(location.Bounds);
+            var distanceToNorthEast = GetDistance(middle, location.Bounds.NorthEast);
+            var distanceToSouthWest = GetDistance(middle, location.Bounds.SouthWest);
 
             return Math.Max(distanceToNorthEast, distanceToSouthWest);
         }
@@ -60,9 +63,40 @@ namespace Geomapping
             return distance;
         }
 
+        private LocationPair GetMiddle(Bounds bounds)
+        {
+            var lat1 = bounds.NorthEast.Latitude;
+            var lon1 = bounds.NorthEast.Longitude;
+
+            var lat2 = bounds.SouthWest.Latitude;
+            var lon2 = bounds.SouthWest.Longitude;
+
+            double dLon = DegToRad(lon2 - lon1);
+
+            lat1 = DegToRad(lat1);
+            lat2 = DegToRad(lat2);
+            lon1 = DegToRad(lon1);
+
+            double Bx = Math.Cos(lat2) * Math.Cos(dLon);
+            double By = Math.Cos(lat2) * Math.Sin(dLon);
+            double lat3 = Math.Atan2(Math.Sin(lat1) + Math.Sin(lat2), Math.Sqrt((Math.Cos(lat1) + Bx) * (Math.Cos(lat1) + Bx) + By * By));
+            double lon3 = lon1 + Math.Atan2(By, Math.Cos(lat1) + Bx);
+
+            return new LocationPair
+            {
+                Latitude = RadToDeg(lat3),
+                Longitude = RadToDeg(lon3)
+            };
+        }
+
         private double DegToRad(double deg)
         {
             return deg * (Math.PI / 180);
+        }
+
+        private double RadToDeg(double rad)
+        {
+            return (180 / Math.PI) * rad;
         }
     }
 }
