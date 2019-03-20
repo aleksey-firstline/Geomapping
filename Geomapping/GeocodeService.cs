@@ -35,6 +35,14 @@ namespace Geomapping
             return distance < radius;
         }
 
+        public bool IsLocationCross(Bounds bounds, Bounds innerBounds, double radius, double innerRadius)
+        {
+            var middle = GetMiddle(bounds);
+            var innerMiddle = GetMiddle(innerBounds);
+            var distance = GetDistance(middle, innerMiddle);
+            return (distance - innerRadius) < radius;
+        }
+
         public double GetRadius(GeocodeResponseLocation location)
         {
             var middle = GetMiddle(location.Bounds);

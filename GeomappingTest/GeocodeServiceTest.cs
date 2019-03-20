@@ -51,6 +51,19 @@ namespace Tests
         }
 
         [Test]
+        public void IsLocationCross_Google_ShouldBeTrue()
+        {
+            var service = new GeocodeService("AIzaSyDXrRQME2vYtdi94sWJV33Cl3A4mESSAXA", GeocoderNames.Google);
+            var location = service.GetLocationAsync("35801 usa").Result.FirstOrDefault();
+            var innerLocation = service.GetLocationAsync("35811 usa").Result.FirstOrDefault();
+            var radius = service.GetRadius(location);
+            var innerRadius = service.GetRadius(innerLocation);
+            var isIncludes = service.IsLocationCross(location.Bounds, innerLocation.Bounds, radius, innerRadius);
+
+            isIncludes.Should().BeTrue();
+        }
+
+        [Test]
         public void IsLocationIncludes_Google_ShouldBeFalse()
         {
             var service = new GeocodeService("AIzaSyDXrRQME2vYtdi94sWJV33Cl3A4mESSAXA", GeocoderNames.Google);
